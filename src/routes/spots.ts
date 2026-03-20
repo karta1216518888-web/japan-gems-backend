@@ -198,3 +198,14 @@ export async function spotRoutes(fastify: FastifyInstance) {
     }).slice(0, 10);
     return { data: nearby };
   });
+
+  // 熱門景點
+  fastify.get('/popular', async () => {
+    const spots = await prisma.spot.findMany({
+      where: { status: 'active' },
+      include: { _count: { select: { references: true } }, prefecture: true },
+      orderBy: { references: { _count: 'desc' } },
+      take: 10
+    });
+    return { data: spots };
+  });
