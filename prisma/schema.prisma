@@ -1,0 +1,207 @@
+// This is your Prisma schema file
+// Learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// 地域 (全國規劃)
+model Region {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameJa      String
+  nameEn      String?
+  prefecture  Prefecture[]
+  spots       Spot[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 都道府縣
+model Prefecture {
+  id          String   @id @default(cuid())
+  name        String
+  nameJa      String
+  nameEn      String?
+  regionId    String
+  region      Region   @relation(fields: [regionId], references: [id])
+  cities      City[]
+  spots       Spot[]
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 城市
+model City {
+  id             String   @id @default(cuid())
+  name           String
+  nameJa         String
+  nameEn         String?
+  prefectureId   String
+  prefecture     Prefecture @relation(fields: [prefectureId], references: [id])
+  spots          Spot[]
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+}
+
+// 景點分類
+model Category {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  nameJa      String
+  nameEn      String?
+  spots       SpotCategory[]
+  createdAt   DateTime @default(now())
+}
+
+// 景點
+model Spot {
+  id          String   @id @default(cuid())
+  name        String
+  nameJa      String
+  nameEn      String?
+  nameZh      String?
+  
+  description String   @db.Text
+  localTip   String?  @db.Text
+  
+  latitude    Float
+  longitude   Float
+  address     String?
+  
+  languageBarrier Int    @default(3)  // 1-5
+  signLanguage    Boolean @default(false)
+  paymentAccept   String[] 
+  
+  businessHours  String?
+  closedDays     String?
+  budget         Int?
+  
+  status       SpotStatus @default(active)
+  
+  // 關聯
+  regionId        String?
+  prefectureId    String?
+  cityId          String?
+  
+  region          Region?        @relation(fields: [regionId], references: [id])
+  prefecture      Prefecture?    @relation(fields: [prefectureId], references: [id])
+  city            City?          @relation(fields: [cityId], references: [id])
+  categories      SpotCategory[]
+  references      Reference[]
+  photos          Photo[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum SpotStatus {
+  active
+  closed
+  relocated
+}
+
+// 景點-分類 多對多
+model SpotCategory {
+  spotId     String
+  categoryId String
+  spot       Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id])
+  
+  @@id([spotId, categoryId])
+}
+
+// 參考資料來源
+model Reference {
+  id          String   @id @default(cuid())
+  spotId      String
+  spot        Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  
+  type        ReferenceType
+  title       String
+  url         String
+  author      String?
+  source      String
+  language    String
+  
+  publishDate DateTime?
+  quotedContent String? @db.Text
+  
+  quality     ReferenceQuality @default(secondary)
+  
+  // 可靠性分數
+  reliabilityScore    Int       @default(50)
+  manualOverride      Int?
+  lastVerified        DateTime?
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+enum ReferenceType {
+  blog
+  article
+  social
+  video
+  guidebook
+}
+
+enum ReferenceQuality {
+  primary
+  secondary
+  user_generated
+}
+
+// 照片
+model Photo {
+  id          String   @id @default(cuid())
+  spotId      String
+  spot        Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  
+  url         String
+  caption     String?
+  isPrimary   Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+}
+
+// 來源管理（可靠性追蹤）
+model Source {
+  id          String   @id @default(cuid())
+  name        String   @unique
+  url         String
+  type        String   // blog, news, social, etc.
+  language    String
+  
+  // 預設可靠性
+  defaultReliability Int @default(50)
+  
+  // 老闆設定
+  isBlacklisted      Boolean @default(false)
+  isWhitelisted      Boolean @default(false)
+  manualNotes        String?
+  
+  references   Reference[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// 餐廳資訊（未來擴充）
+model RestaurantInfo {
+  id              String   @id @default(cuid())
+  spotId         String   @unique
+  spot           Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  
+  priceRange     String?  // ¥, ¥¥, ¥¥¥
+  cuisine        String[]
+  reservation    Boolean  @default(false)
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
