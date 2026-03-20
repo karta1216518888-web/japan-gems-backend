@@ -169,3 +169,16 @@ export async function spotRoutes(fastify: FastifyInstance) {
     };
   });
 }
+
+  // 隨機景點
+  fastify.get('/random', async () => {
+    const count = await prisma.spot.count({ where: { status: 'active' } });
+    const random = Math.floor(Math.random() * count);
+    const spots = await prisma.spot.findMany({
+      where: { status: 'active' },
+      include: { prefecture: true },
+      skip: random,
+      take: 5
+    });
+    return { data: spots };
+  });
