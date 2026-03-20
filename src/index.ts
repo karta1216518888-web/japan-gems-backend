@@ -3,6 +3,7 @@ import cors from '@fastify/cors';
 import { spotRoutes } from './routes/spots.js';
 import { referenceRoutes } from './routes/references.js';
 import { regionRoutes } from './routes/regions.js';
+import { weatherRoutes } from './routes/weather.js';
 
 const fastify = Fastify({
   logger: true,
@@ -22,6 +23,7 @@ fastify.get('/health', async () => {
 fastify.register(spotRoutes, { prefix: '/api/spots' });
 fastify.register(referenceRoutes, { prefix: '/api/references' });
 fastify.register(regionRoutes, { prefix: '/api/regions' });
+fastify.register(weatherRoutes, { prefix: '/api/weather' });
 
 // Start server
 const start = async () => {
