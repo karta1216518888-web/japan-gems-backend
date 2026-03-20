@@ -168,7 +168,6 @@ export async function spotRoutes(fastify: FastifyInstance) {
       categoriesCount: byCategory.length
     };
   });
-}
 
   // 隨機景點
   fastify.get('/random', async () => {
@@ -182,3 +181,4 @@ export async function spotRoutes(fastify: FastifyInstance) {
     });
     return { data: spots };
   });
+}
