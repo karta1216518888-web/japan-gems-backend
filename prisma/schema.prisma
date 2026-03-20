@@ -10,24 +10,26 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// 地域 (全國規劃)
+// ==========================================
+// 地域結構 (全國規劃 - 8地方、47都道府縣)
+// ==========================================
+
 model Region {
   id          String   @id @default(cuid())
-  name        String   @unique
-  nameJa      String
-  nameEn      String?
+  name        String   @unique  // e.g., "關西地方"
+  nameJa      String            // e.g., "関西地方"
+  nameEn      String?           // e.g., "Kansai"
   prefecture  Prefecture[]
   spots       Spot[]
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// 都道府縣
 model Prefecture {
   id          String   @id @default(cuid())
-  name        String
+  name        String   // e.g., "大阪府"
   nameJa      String
-  nameEn      String?
+  nameEn      String?  // e.g., "Osaka"
   regionId    String
   region      Region   @relation(fields: [regionId], references: [id])
   cities      City[]
@@ -36,53 +38,102 @@ model Prefecture {
   updatedAt   DateTime @updatedAt
 }
 
-// 城市
 model City {
   id             String   @id @default(cuid())
-  name           String
+  name           String   // e.g., "大阪市"
   nameJa         String
   nameEn         String?
   prefectureId   String
-  prefecture     Prefecture @relation(fields: [prefectureId], references: [id])
+  prefecture    Prefecture @relation(fields: [prefectureId], references: [id])
   spots          Spot[]
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 }
 
-// 景點分類
+// ==========================================
+// 景點分類系統
+// ==========================================
+
 model Category {
   id          String   @id @default(cuid())
-  name        String   @unique
-  nameJa      String
-  nameEn      String?
+  name        String   @unique  // e.g., "自然景觀"
+  nameJa      String            // e.g., "自然景観"
+  nameEn      String?           // e.g., "Nature"
   spots       SpotCategory[]
   createdAt   DateTime @default(now())
 }
 
-// 景點
+// 景點-分類 多對多關聯
+model SpotCategory {
+  spotId     String
+  categoryId String
+  spot       Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  category   Category @relation(fields: [categoryId], references: [id])
+  
+  @@id([spotId, categoryId])
+}
+
+// ==========================================
+// 景點 (核心資料表)
+// ==========================================
+
 model Spot {
   id          String   @id @default(cuid())
-  name        String
-  nameJa      String
+  
+  // 多語言名稱
+  name        String              // 預設名稱
+  nameJa      String?
   nameEn      String?
-  nameZh      String?
   
+  // 描述
   description String
-  localTip   String?
+  localTip   String?            // 在地人小技巧
   
+  // 位置
   latitude    Float
   longitude   Float
   address     String?
   
-  languageBarrier Int    @default(3)  // 1-5
-  signLanguage    Boolean @default(false)
-  paymentAccept   String  // JSON string: ["cash","visa"]
+  // --------------------------------------
+  // 旅遊資訊
+  // --------------------------------------
+  languageBarrier    Int        @default(3)  // 1-5 語言友善度
+  paymentMethods    String?     // 支援的付款方式 (JSON: ["cash","visa","suica"])
+  businessHours    String?     // 營業時間
+  closedDays       String?     // 休館日 (JSON: ["Monday","Tuesday"])
+  budgetMin        Int?        // 最低消費
+  budgetMax        Int?        // 最高消費
+  avgVisitTime     Int?        // 平均參觀時間 (分鐘)
   
-  businessHours  String?
-  closedDays     String?
-  budget         Int?
+  // --------------------------------------
+  // 無障礙設施 (Accessibility)
+  // --------------------------------------
+  wheelchairAccess  Boolean    @default(false)  // 輪椅友善
+  elevatorAccess   Boolean    @default(false)  // 有電梯
+  parkingAvailable Boolean    @default(false)  // 有停車場
+  blindFriendly    Boolean    @default(false)  // 視障友善
+  deafFriendly    Boolean    @default(false)  // 聽障友善
   
-  status       String   @default("active")  // active, closed, relocated
+  // --------------------------------------
+  // 聯絡資訊
+  // --------------------------------------
+  phone          String?
+  website        String?
+  instagram      String?
+  twitter        String?
+  facebook       String?
+  
+  // --------------------------------------
+  // 季節性資訊
+  // --------------------------------------
+  bestSeason     String?     // 最佳季節 (JSON: ["spring","autumn"])
+  peakHours      String?     // 尖峰時段
+  offPeakHours   String?     // 離峰時段
+  
+  // --------------------------------------
+  // 狀態與時間
+  // --------------------------------------
+  status         String     @default("active")  // active, closed, relocated
   
   // 關聯
   regionId        String?
@@ -95,50 +146,54 @@ model Spot {
   categories      SpotCategory[]
   references      Reference[]
   photos          Photo[]
-  restaurantInfo  RestaurantInfo?
+  restaurantInfo  RestaurantInfo?  // 餐廳資訊 (未來擴充)
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// 景點-分類 多對多
-model SpotCategory {
-  spotId     String
-  categoryId String
-  spot       Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
-  category   Category @relation(fields: [categoryId], references: [id])
-  
-  @@id([spotId, categoryId])
-}
+// ==========================================
+// 參考資料來源 (核心功能)
+// ==========================================
 
-// 參考資料來源
 model Reference {
   id          String   @id @default(cuid())
   spotId      String
   spot        Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
   
-  type        String   // blog, article, social, video, guidebook
-  title       String
-  url         String
-  author      String?
-  source      String
-  language    String
+  // 基本資料
+  type            String   // blog, article, social, video, guidebook
+  title           String
+  url             String
+  author          String?
+  source          String   // 來源網站/部落格名稱
+  language        String   // 內容語言
   
-  publishDate DateTime?
-  quotedContent String?
+  // 內容
+  publishDate     DateTime?
+  quotedContent   String?  // 引用片段
   
-  quality     String   @default("secondary")  // primary, secondary, user_generated
+  // 品質分類
+  quality         String   @default("secondary")  // primary, secondary, user_generated
   
-  // 可靠性分數
-  reliabilityScore    Int       @default(50)
-  manualOverride      Int?
-  lastVerified        DateTime?
+  // --------------------------------------
+  // 可靠性評分系統
+  // --------------------------------------
+  reliabilityScore    Int       @default(50)   // 1-100 系統計算
+  manualOverride      Int?                  // 老闆人工覆蓋
+  lastVerified       DateTime?             // 上次驗證時間
+  
+  // 來源關聯 (用於批量管理)
+  sourceId    String?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
+// ==========================================
 // 照片
+// ==========================================
+
 model Photo {
   id          String   @id @default(cuid())
   spotId      String
@@ -147,40 +202,77 @@ model Photo {
   url         String
   caption     String?
   isPrimary   Boolean  @default(false)
+  photographer String?  // 攝影者
   
   createdAt   DateTime @default(now())
 }
 
-// 來源管理（可靠性追蹤）
+// ==========================================
+// 來源管理 (可靠性追蹤)
+// ==========================================
+
 model Source {
   id          String   @id @default(cuid())
-  name        String   @unique
+  name        String   @unique  // 來源名稱
   url         String
   type        String   // blog, news, social, etc.
-  language    String
+  language    String   // 主要語言
   
-  // 預設可靠性
+  // 預設可靠性權重
   defaultReliability Int @default(50)
   
   // 老闆設定
-  isBlacklisted      Boolean @default(false)
-  isWhitelisted      Boolean @default(false)
-  manualNotes        String?
+  isBlacklisted      Boolean @default(false)  // 黑名單
+  isWhitelisted     Boolean @default(false)  // 白名單
+  manualNotes       String?  // 備註
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-// 餐廳資訊（未來擴充）
+// ==========================================
+// 餐廳資訊 (未來擴充)
+// ==========================================
+
 model RestaurantInfo {
   id              String   @id @default(cuid())
-  spotId         String   @unique
-  spot           Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
+  spotId          String   @unique
+  spot            Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
   
-  priceRange     String?  // ¥, ¥¥, ¥¥¥
-  cuisine        String   // JSON string: ["ramen","sushi"]
-  reservation    Boolean  @default(false)
+  priceRange      String?   // ¥, ¥¥, ¥¥¥
+  cuisine         String?   // 料理類型 (JSON)
+  reservation     Boolean   @default(false)  // 需要預約
+  seatingCapacity Int?      // 座位數
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
+}
+
+// ==========================================
+// 使用者相關 (未來擴充)
+// ==========================================
+
+model User {
+  id          String   @id @default(cuid())
+  email       String   @unique
+  name        String?
+  avatar      String?
+  
+  // 收藏
+  favorites   Favorite[]
+  
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  spotId    String
+  user      User     @relation(fields: [userId], references: [id])
+  spot      Spot     @relation(fields: [spotId], references: [id])
+  
+  createdAt DateTime @default(now())
+  
+  @@unique([userId, spotId])
 }
