@@ -135,3 +135,30 @@ export async function spotRoutes(fastify: FastifyInstance) {
     return { data: spots };
   });
 }
+
+// 統計 API
+spotsRouter.get('/stats', async (request) => {
+  const total = await prisma.spot.count({ where: { status: 'active' } });
+  const byPrefecture = await prisma.spot.groupBy({
+    by: ['prefectureId'],
+    where: { status: 'active' },
+    _count: true
+  });
+  const byCategory = await prisma.spotCategory.groupBy({
+    by: ['categoryId'],
+    _count: true
+  });
+  
+  const prefectureNames = await Promise.all(
+    byPrefecture.map(p => prisma.prefecture.findUnique({ where: { id: p.prefectureId } }))
+  );
+  
+  return {
+    total,
+    byPrefecture: byPrefecture.map((p, i) => ({
+      name: prefectureNames[i]?.name || 'Unknown',
+      count: p._count
+    })),
+    categoriesCount: byCategory.length
+  };
+});
