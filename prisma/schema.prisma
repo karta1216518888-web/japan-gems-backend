@@ -6,7 +6,7 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
+  provider = "sqlite"
   url      = env("DATABASE_URL")
 }
 
@@ -67,8 +67,8 @@ model Spot {
   nameEn      String?
   nameZh      String?
   
-  description String   @db.Text
-  localTip   String?  @db.Text
+  description String
+  localTip   String?
   
   latitude    Float
   longitude   Float
@@ -76,13 +76,13 @@ model Spot {
   
   languageBarrier Int    @default(3)  // 1-5
   signLanguage    Boolean @default(false)
-  paymentAccept   String[] 
+  paymentAccept   String  // JSON string: ["cash","visa"]
   
   businessHours  String?
   closedDays     String?
   budget         Int?
   
-  status       SpotStatus @default(active)
+  status       String   @default("active")  // active, closed, relocated
   
   // 關聯
   regionId        String?
@@ -101,12 +101,6 @@ model Spot {
   updatedAt   DateTime @updatedAt
 }
 
-enum SpotStatus {
-  active
-  closed
-  relocated
-}
-
 // 景點-分類 多對多
 model SpotCategory {
   spotId     String
@@ -123,7 +117,7 @@ model Reference {
   spotId      String
   spot        Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
   
-  type        ReferenceType
+  type        String   // blog, article, social, video, guidebook
   title       String
   url         String
   author      String?
@@ -131,9 +125,9 @@ model Reference {
   language    String
   
   publishDate DateTime?
-  quotedContent String? @db.Text
+  quotedContent String?
   
-  quality     ReferenceQuality @default(secondary)
+  quality     String   @default("secondary")  // primary, secondary, user_generated
   
   // 可靠性分數
   reliabilityScore    Int       @default(50)
@@ -142,20 +136,6 @@ model Reference {
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-}
-
-enum ReferenceType {
-  blog
-  article
-  social
-  video
-  guidebook
-}
-
-enum ReferenceQuality {
-  primary
-  secondary
-  user_generated
 }
 
 // 照片
@@ -198,7 +178,7 @@ model RestaurantInfo {
   spot           Spot     @relation(fields: [spotId], references: [id], onDelete: Cascade)
   
   priceRange     String?  // ¥, ¥¥, ¥¥¥
-  cuisine        String[]
+  cuisine        String   // JSON string: ["ramen","sushi"]
   reservation    Boolean  @default(false)
   
   createdAt   DateTime @default(now())
