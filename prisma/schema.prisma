@@ -252,27 +252,25 @@ model RestaurantInfo {
 // 使用者相關 (未來擴充)
 // ==========================================
 
-model User {
-  id          String   @id @default(cuid())
-  email       String   @unique
-  name        String?
-  avatar      String?
-  
-  // 收藏
-  favorites   Favorite[]
-  
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-}
+// User 和 Favorite 預留未來擴充
+// 目前先註釋，等需要時再啟用
 
-model Favorite {
-  id        String   @id @default(cuid())
-  userId    String
-  spotId    String
-  user      User     @relation(fields: [userId], references: [id])
-  spot      Spot     @relation(fields: [spotId], references: [id])
-  
-  createdAt DateTime @default(now())
-  
-  @@unique([userId, spotId])
-}
+// model User {
+//   id          String   @id @default(cuid())
+//   email       String   @unique
+//   name        String?
+//   avatar      String?
+//   favorites   Favorite[]
+//   createdAt   DateTime @default(now())
+//   updatedAt   DateTime @updatedAt
+// }
+
+// model Favorite {
+//   id        String   @id @default(cuid())
+//   userId    String
+//   spotId    String
+//   user      User     @relation(fields: [userId], references: [id])
+//   spot      Spot     @relation(fields: [spotId], references: [id])
+//   createdAt DateTime @default(now())
+//   @@unique([userId, spotId])
+// }
