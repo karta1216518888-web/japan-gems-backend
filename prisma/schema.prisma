@@ -274,3 +274,12 @@ model RestaurantInfo {
 //   createdAt DateTime @default(now())
 //   @@unique([userId, spotId])
 // }
+
+model Review {
+  id        String   @id @default(cuid())
+  spotId    String
+  rating    Int
+  comment   String?
+  author    String?
+  createdAt DateTime @default(now())
+}
