@@ -26,7 +26,7 @@ fastify.register(regionRoutes, { prefix: '/api/regions' });
 // Start server
 const start = async () => {
   try {
-    const port = parseInt(process.env.PORT || '3000');
+    const port = parseInt(process.env.PORT || '3001');
     await fastify.listen({ port, host: '0.0.0.0' });
     console.log(`Server running on http://localhost:${port}`);
   } catch (err) {

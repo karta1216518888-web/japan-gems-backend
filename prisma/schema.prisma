@@ -95,6 +95,7 @@ model Spot {
   categories      SpotCategory[]
   references      Reference[]
   photos          Photo[]
+  restaurantInfo  RestaurantInfo?
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -185,8 +186,6 @@ model Source {
   isBlacklisted      Boolean @default(false)
   isWhitelisted      Boolean @default(false)
   manualNotes        String?
-  
-  references   Reference[]
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
