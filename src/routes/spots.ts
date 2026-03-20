@@ -182,3 +182,19 @@ export async function spotRoutes(fastify: FastifyInstance) {
     return { data: spots };
   });
 }
+
+  // 附近景點
+  fastify.get('/nearby', async (request) => {
+    const { lat, lng, radius = '10' } = request.query as any;
+    const r = parseFloat(radius);
+    const spots = await prisma.spot.findMany({
+      where: { status: 'active' },
+      include: { prefecture: true }
+    });
+    // 簡單距離計算
+    const nearby = spots.filter(s => {
+      const d = Math.sqrt(Math.pow((s.latitude - parseFloat(lat)) * 111, 2) + Math.pow((s.longitude - parseFloat(lng)) * 111 * Math.cos(s.latitude), 2));
+      return d <= r;
+    }).slice(0, 10);
+    return { data: nearby };
+  });
