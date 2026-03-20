@@ -4,14 +4,15 @@ import { PrismaClient } from '@prisma/client';
 const prisma = new PrismaClient();
 
 export async function spotRoutes(fastify: FastifyInstance) {
-  // 獲取所有景點 (支援分頁、篩選)
+  // 獲取所有景點 (支援分頁、篩選、排序)
   fastify.get('/', async (request) => {
     const { 
       city, 
       category, 
       search, 
       page = '1', 
-      limit = '20' 
+      limit = '20',
+      sort = 'newest'
     } = request.query as any;
     
     const where: any = { status: 'active' };
@@ -33,6 +34,12 @@ export async function spotRoutes(fastify: FastifyInstance) {
         { description: { contains: search, mode: 'insensitive' } },
       ];
     }
+
+    // 排序選項
+    let orderBy: any = { createdAt: 'desc' };
+    if (sort === 'oldest') orderBy = { createdAt: 'asc' };
+    if (sort === 'name') orderBy = { name: 'asc' };
+    if (sort === 'nameJa') orderBy = { nameJa: 'asc' };
     
     const skip = (parseInt(page) - 1) * parseInt(limit);
     
@@ -48,7 +55,7 @@ export async function spotRoutes(fastify: FastifyInstance) {
         },
         skip,
         take: parseInt(limit),
-        orderBy: { createdAt: 'desc' }
+        orderBy
       }),
       prisma.spot.count({ where })
     ]);
