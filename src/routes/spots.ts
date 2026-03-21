@@ -31,7 +31,7 @@ export async function spotRoutes(fastify: FastifyInstance) {
     const [spots, total] = await Promise.all([
       prisma.spot.findMany({
         where,
-        include: { city: true, prefecture: true, categories: { include: { category: true } }, photos: { where: { isPrimary: true } }, _count: { select: { references: true } } },
+        include: { city: true, prefecture: true, photos: true, categories: { include: { category: true } }, photos: { where: { isPrimary: true } }, _count: { select: { references: true } } },
         skip, take: parseInt(limit), orderBy
       }),
       prisma.spot.count({ where })
@@ -45,7 +45,7 @@ export async function spotRoutes(fastify: FastifyInstance) {
     const { id } = request.params as any;
     const spot = await prisma.spot.findUnique({
       where: { id },
-      include: { city: true, prefecture: true, categories: { include: { category: true } }, references: true, photos: true }
+      include: { city: true, prefecture: true, photos: true, categories: { include: { category: true } }, references: true, photos: true }
     });
     if (!spot) return { error: 'Spot not found' };
     return { data: spot };
