@@ -52,6 +52,9 @@ fastify.register(referenceRoutes, { prefix: '/api/references' });
 fastify.register(regionRoutes, { prefix: '/api/regions' });
 fastify.register(weatherRoutes, { prefix: '/api/weather' });
 
+// SEO routes
+fastify.get('/robots.txt', async () => 'User-agent: *\nAllow: /\nSitemap: https://japan-gems.example.com/sitemap.xml');
+
 // Start server
 const start = async () => {
   try {

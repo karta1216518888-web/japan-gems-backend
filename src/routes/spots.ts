@@ -96,7 +96,6 @@ export async function spotRoutes(fastify: FastifyInstance) {
     const { q = '' } = request.query as any;
     const now = Date.now();
     
-    // Cache for 5 minutes
     if (!searchCache.data.length || now - searchCache.time > 5 * 60 * 1000) {
       const spots = await prisma.spot.findMany({
         select: { id: true, name: true, nameJa: true, prefecture: { select: { name: true } } }
@@ -112,5 +111,41 @@ export async function spotRoutes(fastify: FastifyInstance) {
       .map(s => ({ id: s.id, name: s.name, nameJa: s.nameJa, city: s.prefecture?.name }));
     
     return { data: results };
+  });
+
+  // 精選景點
+  fastify.get('/featured', async () => {
+    const spots = await prisma.spot.findMany({
+      where: { status: 'active' },
+      include: { prefecture: true, _count: { select: { references: true } } },
+      orderBy: { references: { _count: 'desc' } },
+      take: 20
+    });
+    return { data: spots.filter(s => s._count.references > 0) };
+  });
+
+  // 四季推薦
+  fastify.get('/seasonal', async (request) => {
+    const { season = 'spring' } = request.query as any;
+    
+    const seasonMap: Record<string, string[]> = {
+      spring: ['桜', '花', '春'],
+      summer: ['海', '川', '夏'],
+      autumn: ['紅葉', '秋'],
+      winter: ['雪', '冬', '温泉']
+    };
+    
+    const keywords = seasonMap[season] || seasonMap.spring;
+    const spots = await prisma.spot.findMany({
+      where: { status: 'active' },
+      include: { prefecture: true },
+      take: 30
+    });
+    
+    const filtered = spots.filter(s => 
+      keywords.some(k => (s.name && s.name.includes(k)) || (s.nameJa && s.nameJa.includes(k)))
+    );
+    
+    return { data: filtered.length > 0 ? filtered.slice(0, 10) : spots.slice(0, 10) };
   });
 }
