@@ -652,3 +652,12 @@ model Review {
   author    String?
   createdAt DateTime @default(now())
 }
+
+model Review {
+  id        String   @id @default(cuid())
+  spotId    String
+  rating    Int
+  comment   String?
+  author    String?
+  createdAt DateTime @default(now())
+}
